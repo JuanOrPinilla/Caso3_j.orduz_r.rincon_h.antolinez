@@ -1,13 +1,26 @@
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Random;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 public class Servidor {
 
     private static final int PUERTO = 3400;
+    
+    public static PublicKey llavePublica;
+    private static PrivateKey llavePrivada;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
+
+        //generación de llave pública y privada del servidor
+        KeyPair generator = LlavesServidor.generadorPar();
+        llavePublica = LlavesServidor.generadorLlavePublica(generator);
+        llavePrivada = LlavesServidor.generadorLlavePrivada(generator);
+
+        //Inicializacón del servidor
         ServerSocket ss = null;
         boolean continuar = true;
 
