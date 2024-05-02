@@ -13,8 +13,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
 public class ProtocoloCliente {
     private static PublicKey llavePublicaServidor;
+    private static SecretKey llaveAsimetricaCifrar;
+    private static SecretKey llaveAsimetricaMac;
+
+    private static String iv;
 
     public static void recibirllave(ObjectInputStream pIn) throws ClassNotFoundException, IOException{
         //obtener llave pública del servidor
@@ -30,7 +37,7 @@ public class ProtocoloCliente {
         //obtener el hash local
         byte[] hashLocal = generarHash(numeroAleatorio);
         //descifra el h(m) mandado por el servidor
-        byte[] hashretoDescifrado = Descifrado.Descifrar(llavePublicaServidor, hashretoCifrado);
+        byte[] hashretoDescifrado = Descifrado.DescifrarAes(llavePublicaServidor, hashretoCifrado);
         //traduce el reto descrifrado a string
 
         //imprimir(hashretoDescifrado);
@@ -51,6 +58,8 @@ public class ProtocoloCliente {
         // Generar un número primo aleatorio p
         String p = "00c0689e42e90fd7caf07d2e3c20a9ac9e4992b75f4b2033279ced983585fcbcbcc30f93bc57f8f11f9c6e905f016d813b076786e1630fb2902bc264560d9539b475a078f1a02d76c635365a3cadbd75659112a7abf318340fde265c7e0d2a184f223dd997a4f56c866e9a1176c232a826fc4845b4432aec7fe8dbb1ed2c429fa7";
         String g = "2";
+
+        iv = "1234567890123456";
 
         // Parse hexadecimal string to long
         BigInteger PdecimalValue = new BigInteger(p, 16);
@@ -73,7 +82,7 @@ public class ProtocoloCliente {
         //obtener el hash local
         byte[] hashLocal = generarHash(concatenado);
         //descifra el h(m) mandado por el servidor
-        byte[] hashDescifrado = Descifrado.Descifrar(llavePublicaServidor, hashretoCifrado);
+        byte[] hashDescifrado = Descifrado.DescifrarAes(llavePublicaServidor, hashretoCifrado);
         // Comparar si los dos arrays son iguales
         boolean sonIguales = Arrays.equals(hashLocal, hashDescifrado);
         //si el reto enviado y la verificación no es correcta el programa acaba
@@ -92,8 +101,41 @@ public class ProtocoloCliente {
         BigInteger LlaveMaestra = gxy.mod(PdecimalValue);
         System.out.println("Shared secret:" + LlaveMaestra);
 
-        //TODO: GENERAR LLAVE SIMETRICA PARA CIFRAR K_AB1
-        //TODO: GENERAR LLAVE SIMETRICA PARA MAC K_AB2
+        //CALCULO DE LLAVES
+        byte[] digestBytes = generarHash(LlaveMaestra.toString());
+
+        // Dividir el digest en dos mitades
+        int halfLength = digestBytes.length / 2;
+
+        //GENERAR LLAVE SIMETRICA PARA CIFRAR K_AB1
+        byte[] encryptionKeyBytes = Arrays.copyOfRange(digestBytes, 0, halfLength); // Primeros 256 bits
+
+        //GENERAR LLAVE SIMETRICA PARA MAC K_AB2
+        byte[] hmacKeyBytes = Arrays.copyOfRange(digestBytes, halfLength, digestBytes.length); // Últimos 256 bits
+
+        // Crear una instancia de la clave secreta utilizando AES
+        SecretKey encryptionKey = new SecretKeySpec(encryptionKeyBytes, "AES");
+        // Crear una instancia de la clave secreta utilizando SecretKeySpec
+        SecretKey hmacKey = new SecretKeySpec(hmacKeyBytes, "HmacSHA256");
+
+        llaveAsimetricaCifrar = encryptionKey;
+        llaveAsimetricaMac = hmacKey;
+    }
+    public static void iniciarSesion(String login, String password, ObjectInputStream pIn, ObjectOutputStream pOut) throws Exception{
+
+        byte[] hashlogin = generarHash(login);
+        byte[] cKAB1log = Cifrado.cifradoSimetrico(llaveAsimetricaCifrar, iv, hashlogin);
+        byte[] hashpassword = generarHash(password);
+        byte[] cKAB1pas = Cifrado.cifradoSimetrico(llaveAsimetricaCifrar, iv, hashpassword);
+
+        pOut.writeObject(login);
+
+        pOut.writeObject(cKAB1log);
+
+        pOut.writeObject(password);
+
+        pOut.writeObject(cKAB1pas);
+
     }
 
     private static byte[] generarHash(String mensaje) throws Exception {

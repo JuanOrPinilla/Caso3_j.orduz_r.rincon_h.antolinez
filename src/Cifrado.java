@@ -1,11 +1,21 @@
 
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public class Cifrado {
     private final static String AES = "RSA";
+    private final static String PADDING = "AES/CBC/PKCS5Padding";
 
     public static byte[] C_kPrivate(String texto,PrivateKey llave ){
         byte[] retoCifrado;  
@@ -52,6 +62,16 @@ public class Cifrado {
             System.out.println("Exception: " + e.getMessage());
             return null;
         }
+    }
+
+    public static byte[] cifradoSimetrico(SecretKey llave, String iv,byte[] texto) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException{
+        byte[] datoCifrado;
+        Cipher cipher = Cipher.getInstance(PADDING);
+        SecretKey skeySpec = llave;
+        IvParameterSpec ivParameterSpec = new IvParameterSpec(iv.getBytes());
+        cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivParameterSpec);
+        datoCifrado = cipher.doFinal(texto);
+        return datoCifrado;
     }
     
 }

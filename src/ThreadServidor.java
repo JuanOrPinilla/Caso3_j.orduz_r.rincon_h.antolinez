@@ -36,10 +36,11 @@ public class ThreadServidor extends Thread {
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } catch (Exception e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
             ProtocoloServidor.diffieHelman(escritor, lector);
+            System.out.println("\nCONTINUAR (Paso 12)\n");
+            ProtocoloServidor.iniciarSesion(escritor, lector);
 
 
             escritor.close();

@@ -12,6 +12,9 @@ import java.math.BigInteger;
 public class Cliente {
     public static final int PUERTO = 3400;
 	public static final String SERVIDOR = "localhost";
+
+	// Caracteres válidos para generar el nombre de usuario y la contraseña
+    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 	
 	public static void main(String[] args) throws Exception {
 		
@@ -42,11 +45,33 @@ public class Cliente {
 		ProtocoloCliente.recibirllave(lector);
 		ProtocoloCliente.verificaReto(lector,escritor,reto);
 		ProtocoloCliente.diffieHelman(lector, escritor);
+
+		// Longitud deseada para el nombre de usuario y la contraseña
+        int usernameLength = 8;
+        int passwordLength = 12;
+
+        // Generar nombre de usuario y contraseña
+        String username = generateRandomString(usernameLength);
+        String password = generateRandomString(passwordLength);
+
+		ProtocoloCliente.iniciarSesion(username,password,lector, escritor);
 		
 		escritor.close();
 		lector.close();
 		socket.close();
 		stdIn.close();
 	}
+
+	// Método para generar una cadena aleatoria de longitud dada
+    private static String generateRandomString(int length) {
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            int randomIndex = random.nextInt(CHARACTERS.length());
+            char randomChar = CHARACTERS.charAt(randomIndex);
+            sb.append(randomChar);
+        }
+        return sb.toString();
+    }
 }
 

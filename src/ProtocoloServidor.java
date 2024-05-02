@@ -13,12 +13,19 @@ import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 public class ProtocoloServidor {
 
     public static PublicKey llavePublica;
     private static PrivateKey llavePrivada;
+    private static SecretKey llaveAsimetricaCifrar;
+    private static SecretKey llaveAsimetricaMac;
+    private static String iv;
 
     public static void enviarLlavePublica(ObjectOutputStream pOut) throws IOException{
         pOut.writeObject(llavePublica);
@@ -34,14 +41,15 @@ public class ProtocoloServidor {
         byte[] retoCifrado = Cifrado.C_kPrivateDirecto(hash, llavePrivada);
         
         pOut.writeObject(retoCifrado);
-        System.out.println("salida procesada: ");
-        imprimir(retoCifrado);
+        //System.out.println("salida procesada: ");
+        //imprimir(retoCifrado);
     }
 
     public static void diffieHelman(ObjectInputStream pIn, ObjectOutputStream pOut) throws Exception{
         // Generar un número primo aleatorio p
         String p = "00c0689e42e90fd7caf07d2e3c20a9ac9e4992b75f4b2033279ced983585fcbcbcc30f93bc57f8f11f9c6e905f016d813b076786e1630fb2902bc264560d9539b475a078f1a02d76c635365a3cadbd75659112a7abf318340fde265c7e0d2a184f223dd997a4f56c866e9a1176c232a826fc4845b4432aec7fe8dbb1ed2c429fa7";
         String g = "2";
+        iv = "1234567890123456";
 
         // Parse hexadecimal string to long
         BigInteger PdecimalValue = new BigInteger(p, 16);
@@ -74,8 +82,69 @@ public class ProtocoloServidor {
         BigInteger LlaveMaestra = gyx.mod(PdecimalValue);
         System.out.println("Shared secret:" + LlaveMaestra);
 
-        //TODO: GENERAR LLAVE SIMETRICA PARA CIFRAR K_AB1
-        //TODO: GENERAR LLAVE SIMETRICA PARA MAC K_AB2
+        //CALCULO DE LLAVES
+        byte[] digestBytes = generarHash(LlaveMaestra.toString());
+
+        // Dividir el digest en dos mitades
+        int halfLength = digestBytes.length / 2;
+
+        //GENERAR LLAVE SIMETRICA PARA CIFRAR K_AB1
+        byte[] encryptionKeyBytes = Arrays.copyOfRange(digestBytes, 0, halfLength); // Primeros 256 bits
+
+        //GENERAR LLAVE SIMETRICA PARA MAC K_AB2
+        byte[] hmacKeyBytes = Arrays.copyOfRange(digestBytes, halfLength, digestBytes.length); // Últimos 256 bits
+
+        // Crear una instancia de la clave secreta utilizando AES
+        SecretKey encryptionKey = new SecretKeySpec(encryptionKeyBytes, "AES");
+        // Crear una instancia de la clave secreta utilizando SecretKeySpec
+        SecretKey hmacKey = new SecretKeySpec(hmacKeyBytes, "HmacSHA256");
+
+        llaveAsimetricaCifrar = encryptionKey;
+        llaveAsimetricaMac = hmacKey;
+    }
+
+    public static void iniciarSesion(ObjectInputStream pIn, ObjectOutputStream pOut) throws Exception{
+        
+        //para el login
+        String login = (String) pIn.readObject();
+
+        byte[] cKAB1log = (byte[]) pIn.readObject();
+
+        byte[] cKAB1logDescifrado = Descifrado.DescifrarPadding(llaveAsimetricaCifrar,iv,cKAB1log);
+        
+        byte[] hashLocallog = generarHash(login);
+
+        imprimir(hashLocallog);
+        imprimir(cKAB1logDescifrado);
+         // Comparar si los dos arrays son iguales
+         boolean sonIguales = Arrays.equals(hashLocallog, cKAB1logDescifrado);
+         //si el reto enviado y la verificación no es correcta el programa acaba
+         if(sonIguales == false){
+             System.out.println("ERROR");
+             System.exit(0); // Terminar el programa
+         }
+         System.out.println("OK: Verificar (Paso 16 Usuario)\n");
+
+        //para la contraseña
+        String password = (String) pIn.readObject();
+
+        byte[] cKAB1pass = (byte[]) pIn.readObject();
+
+        byte[] cKAB1passDescifrado = Descifrado.DescifrarPadding(llaveAsimetricaCifrar,iv,cKAB1pass);
+        
+        byte[] hashLocalpas = generarHash(password);
+
+        imprimir(hashLocallog);
+        imprimir(cKAB1logDescifrado);
+
+         // Comparar si los dos arrays son iguales
+         sonIguales = Arrays.equals(hashLocalpas, cKAB1passDescifrado);
+         //si el reto enviado y la verificación no es correcta el programa acaba
+         if(sonIguales == false){
+             System.out.println("ERROR");
+             System.exit(0); // Terminar el programa
+         }
+         System.out.println("OK: Verificar (Paso 16 Contraseña)");
     }
     
     private static byte[] generarHash(String mensaje) throws Exception {
@@ -105,35 +174,16 @@ public class ProtocoloServidor {
         System.out.println(contenido[i] + " ");
     }
 
-    // Generar un número primo aleatorio entre 2^10 y 2^20
-    private static int generarNumeroPrimo() {
-        Random random = new Random();
-        int min = 1 << 10; // 2^10
-        int max = 1 << 20; // 2^20
-        int p;
-        do {
-            p = random.nextInt(max - min + 1) + min;
-        } while (!esPrimo(p));
-        return p;
-    }
-
-    // Verificar si un número es primo
-    private static boolean esPrimo(int n) {
-        if (n <= 1) {
-            return false;
+    public static byte[] convertirIVStringABytes(String ivString) {
+        int longitud = ivString.length();
+        byte[] ivBytes = new byte[longitud / 2];
+    
+        for (int i = 0; i < longitud; i += 2) {
+            ivBytes[i / 2] = (byte) ((Character.digit(ivString.charAt(i), 16) << 4)
+                                 + Character.digit(ivString.charAt(i+1), 16));
         }
-        for (int i = 2; i * i <= n; i++) {
-            if (n % i == 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    // Generar un número aleatorio menor que p y mayor que 1
-    private static int generarBase(int p) {
-        Random random = new Random();
-        return random.nextInt(p - 1) + 1;
+    
+        return ivBytes;
     }
 }
     
