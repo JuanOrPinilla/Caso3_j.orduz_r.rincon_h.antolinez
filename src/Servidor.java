@@ -5,6 +5,8 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Servidor {
 
@@ -13,6 +15,8 @@ public class Servidor {
     public static PublicKey llavePublica;
     private static PrivateKey llavePrivada;
 
+    public static Map<String, byte[]> byteMap = new HashMap<>();
+
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
 
         //generación de llave pública y privada del servidor
@@ -20,6 +24,11 @@ public class Servidor {
         llavePublica = LlavesServidor.generadorLlavePublica(generator);
         llavePrivada = LlavesServidor.generadorLlavePrivada(generator);
 
+        ProtocoloServidor.setPublicKey(llavePublica);
+        ProtocoloServidor.setPrivateKey(llavePrivada);
+
+        ThreadServidor.setLlavePrivada(llavePrivada);
+        ThreadServidor.setLlavePublica(llavePublica);
         //Inicializacón del servidor
         ServerSocket ss = null;
         boolean continuar = true;

@@ -6,7 +6,19 @@ import java.security.PublicKey;
 
 public class LlavesServidor {
 
+    private static PublicKey publicKey;
+
     private final static String ALGORITMO = "RSA";
+
+    // Método para configurar la clave pública
+    public static synchronized void setPublicKey(PublicKey key) {
+        publicKey = key;
+    }
+
+    // Método para obtener la clave pública
+    public static synchronized PublicKey getPublicKey() {
+        return publicKey;
+    }
 
     public static KeyPair generadorPar() throws NoSuchAlgorithmException{
 
