@@ -9,7 +9,9 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Random;
 
 public class ProtocoloCliente {
     private static PublicKey llavePublicaServidor;
@@ -50,6 +52,16 @@ public class ProtocoloCliente {
     byte[] hashBytes = digest.digest(mensaje.getBytes());
 
     return hashBytes;
+}
+
+public static void diffieHelman(ObjectInputStream pIn, ObjectOutputStream pOut) throws IOException, ClassNotFoundException{
+    // Crear una instancia de la clase Random
+    Random random = new Random();
+    // Generar un número aleatorio entre 0 y 20 (individuo)
+    int x = random.nextInt(20);
+
+    int yServidor = (int) pIn.readObject();
+
 }
 
     public static void imprimir (byte[] contenido){

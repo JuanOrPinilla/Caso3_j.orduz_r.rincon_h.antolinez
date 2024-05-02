@@ -10,6 +10,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Random;
+
 public class ProtocoloServidor {
 
     public static PublicKey llavePublica;
@@ -31,6 +36,30 @@ public class ProtocoloServidor {
         pOut.writeObject(retoCifrado);
         System.out.println("salida procesada: ");
         imprimir(retoCifrado);
+    }
+
+    public static void diffieHelman(ObjectInputStream pIn, ObjectOutputStream pOut) throws IOException{
+        // Generar un número primo aleatorio p
+        String p = "00c0689e42e90fd7caf07d2e3c20a9ac9e4992b75f4b2033279ced983585fcbcbcc30f93bc57f8f11f9c6e905f016d813b076786e1630fb2902bc264560d9539b475a078f1a02d76c635365a3cadbd75659112a7abf318340fde265c7e0d2a184f223dd997a4f56c866e9a1176c232a826fc4845b4432aec7fe8dbb1ed2c429fa7";
+        String g = "2";
+
+        // Crear una instancia de la clase Random
+        Random random = new Random();
+
+        // Generar un número aleatorio entre 0 y 20 (individuo)
+        int x = random.nextInt(20);
+
+        int pnum = Integer.parseInt(p);
+        double gxnum = Math.pow(Integer.parseInt(g),x);
+
+        double y = gxnum % pnum;
+
+        //String iv = "0123456789ABCDEF"; // vector de inicialización
+
+        //variables.add(iv);
+
+        pOut.writeObject(y);
+
     }
     
     private static byte[] generarHash(String mensaje) throws Exception {
@@ -59,5 +88,36 @@ public class ProtocoloServidor {
         }
         System.out.println(contenido[i] + " ");
     }
-    
+
+    // Generar un número primo aleatorio entre 2^10 y 2^20
+    private static int generarNumeroPrimo() {
+        Random random = new Random();
+        int min = 1 << 10; // 2^10
+        int max = 1 << 20; // 2^20
+        int p;
+        do {
+            p = random.nextInt(max - min + 1) + min;
+        } while (!esPrimo(p));
+        return p;
+    }
+
+    // Verificar si un número es primo
+    private static boolean esPrimo(int n) {
+        if (n <= 1) {
+            return false;
+        }
+        for (int i = 2; i * i <= n; i++) {
+            if (n % i == 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Generar un número aleatorio menor que p y mayor que 1
+    private static int generarBase(int p) {
+        Random random = new Random();
+        return random.nextInt(p - 1) + 1;
+    }
 }
+    
