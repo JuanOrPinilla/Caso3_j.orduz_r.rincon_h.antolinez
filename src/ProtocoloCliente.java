@@ -91,6 +91,9 @@ public class ProtocoloCliente {
         BigInteger gxy = yServidor.pow(x);
         BigInteger LlaveMaestra = gxy.mod(PdecimalValue);
         System.out.println("Shared secret:" + LlaveMaestra);
+
+        //TODO: GENERAR LLAVE SIMETRICA PARA CIFRAR K_AB1
+        //TODO: GENERAR LLAVE SIMETRICA PARA MAC K_AB2
     }
 
     private static byte[] generarHash(String mensaje) throws Exception {
