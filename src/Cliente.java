@@ -41,6 +41,7 @@ public class Cliente {
 
 		ProtocoloCliente.recibirllave(lector);
 		ProtocoloCliente.verificaReto(lector,escritor,reto);
+		ProtocoloCliente.diffieHelman(lector, escritor);
 		
 		escritor.close();
 		lector.close();

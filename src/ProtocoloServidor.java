@@ -38,10 +38,13 @@ public class ProtocoloServidor {
         imprimir(retoCifrado);
     }
 
-    public static void diffieHelman(ObjectInputStream pIn, ObjectOutputStream pOut) throws IOException{
+    public static void diffieHelman(ObjectInputStream pIn, ObjectOutputStream pOut) throws Exception{
         // Generar un número primo aleatorio p
         String p = "00c0689e42e90fd7caf07d2e3c20a9ac9e4992b75f4b2033279ced983585fcbcbcc30f93bc57f8f11f9c6e905f016d813b076786e1630fb2902bc264560d9539b475a078f1a02d76c635365a3cadbd75659112a7abf318340fde265c7e0d2a184f223dd997a4f56c866e9a1176c232a826fc4845b4432aec7fe8dbb1ed2c429fa7";
         String g = "2";
+
+        // Parse hexadecimal string to long
+        BigInteger PdecimalValue = new BigInteger(p, 16);
 
         // Crear una instancia de la clase Random
         Random random = new Random();
@@ -49,16 +52,29 @@ public class ProtocoloServidor {
         // Generar un número aleatorio entre 0 y 20 (individuo)
         int x = random.nextInt(20);
 
-        int pnum = Integer.parseInt(p);
         double gxnum = Math.pow(Integer.parseInt(g),x);
+        BigInteger gxnumBigInt = BigInteger.valueOf((long) gxnum);
 
-        double y = gxnum % pnum;
+        //PARA LA VERIFICACiON
+        String concatenado = p + g;
+        //Generar el hash del mensaje (H(m))
+        byte[] hash = generarHash(concatenado);
+        byte[] CifradoDiffie = Cifrado.C_kPrivateDirecto(hash, llavePrivada);
+        pOut.writeObject(CifradoDiffie);
+        
 
-        //String iv = "0123456789ABCDEF"; // vector de inicialización
+        BigInteger yServidor = gxnumBigInt.mod(PdecimalValue);
 
-        //variables.add(iv);
+        //envia al cliente
+        pOut.writeObject(yServidor);
+        //recibe del cliente
+        BigInteger yCliente = (BigInteger) pIn.readObject();
 
-        pOut.writeObject(y);
+        BigInteger gyx = yCliente.pow(x);
+        BigInteger LlaveMaestra = gyx.mod(PdecimalValue);
+        System.out.println("Shared secret:" + LlaveMaestra);
+
+
 
     }
     

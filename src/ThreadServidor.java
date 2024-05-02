@@ -39,12 +39,16 @@ public class ThreadServidor extends Thread {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
+            ProtocoloServidor.diffieHelman(escritor, lector);
 
 
             escritor.close();
             lector.close();
             sktCliente.close();
-        } catch (IOException e){
+        } catch (IOException | ClassNotFoundException e){
+            e.printStackTrace();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }}
 
