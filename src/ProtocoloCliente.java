@@ -7,72 +7,50 @@ import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.PublicKey;
+import java.util.Arrays;
 
 public class ProtocoloCliente {
     private static PublicKey llavePublicaServidor;
 
     public static void recibirllave(ObjectInputStream pIn) throws ClassNotFoundException, IOException{
+        //obtener llave pública del servidor
         llavePublicaServidor =  (PublicKey) pIn.readObject();
-        System.out.println("El usuario ha recibido la llave pública del servidor");
-
-
     }
-    public static void reto(ObjectInputStream pIn, ObjectOutputStream pOut,String numeroAleatorio) throws IOException, ClassNotFoundException {
+
+    public static void verificaReto(ObjectInputStream pIn, ObjectOutputStream pOut,String numeroAleatorio) throws Exception {
         pOut.writeObject(numeroAleatorio);
-        System.out.println("El usuario ha enviado el reto: " + numeroAleatorio);
+        System.out.println("\nEl usuario ha enviado el reto: " + numeroAleatorio + "\n");
 
-        //obtiene del servidor el reto cifrado
-        byte[] retoCifrado = (byte[]) pIn.readObject();
-        //descifra el reto mandado por el servidor
-        byte[] retoDescifrado = Descifrado.Descifrar(llavePublicaServidor, retoCifrado);
+        //obtiene del servidor el h(m) cifrado
+        byte[] hashretoCifrado = (byte[]) pIn.readObject();
+        //obtener el hash local
+        byte[] hashLocal = generarHash(numeroAleatorio);
+        //descifra el h(m) mandado por el servidor
+        byte[] hashretoDescifrado = Descifrado.Descifrar(llavePublicaServidor, hashretoCifrado);
         //traduce el reto descrifrado a string
-        String descifradoClaro = new String(retoDescifrado, StandardCharsets.UTF_8);
-
-        System.out.println("El usuario ha verificado el reto dando resultado: " + descifradoClaro);
-
-        boolean sonIguales = descifradoClaro.equals(numeroAleatorio);
+        imprimir(hashretoDescifrado);
+        imprimir(hashLocal);
+        // Comparar si los dos arrays son iguales
+        boolean sonIguales = Arrays.equals(hashLocal, hashretoDescifrado);
         //si el reto enviado y la verificación no es correcta el programa acaba
         if(sonIguales == false){
             System.out.println("ERROR");
             System.exit(0); // Terminar el programa
         }
-        else{
-            System.out.println("OK");
-        }
-
-        //verificar el reto
+        System.out.println("\nOK: El usuario ha verificado el servidor correctamente ");
     }
 
-    public static void procesar(BufferedReader stdIn, ObjectInputStream pIn, ObjectOutputStream pOut) throws IOException, ClassNotFoundException {
+    private static byte[] generarHash(String mensaje) throws Exception {
+    // Obtener una instancia del algoritmo de hash SHA-256
+    MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
-        //lee del teclado
-        System.out.println("Escriba el mensaje para enviar: ");
-        String fromUser = (String) pIn.readObject();
+    // Calcular el hash del mensaje
+    byte[] hashBytes = digest.digest(mensaje.getBytes());
 
-        // Verificar si la entrada es un número entero positivo
-        try {
-            int numeroConsulta = Integer.parseInt(fromUser);
-            // Si se llega aquí, la entrada es un número válido
-            if (numeroConsulta > 0) {
-                System.out.println("El usuario escribió: " + fromUser);
-
-                pOut.writeObject(fromUser);
-                String fromServer;
-
-                if ((fromServer = (String) pIn.readObject()) != null) {
-                    //El servidor debe responder con numero 1
-                    System.out.println("Respuesta del servidor: " + 1);
-                }
-
-            } else {
-                System.out.println("Error: El número de consulta debe ser un entero positivo. Por favor, intente de nuevo.");
-            }
-        } catch (NumberFormatException e) {
-            // Si ocurre una excepción al intentar convertir a entero, la entrada no es un número válido
-            System.out.println("Error: La entrada no es un número entero. Por favor, intente de nuevo.");
-        }
-    }
+    return hashBytes;
+}
 
     public static void imprimir (byte[] contenido){
         int i = 0;

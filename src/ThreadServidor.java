@@ -32,32 +32,21 @@ public class ThreadServidor extends Thread {
             
             ProtocoloServidor.enviarLlavePublica(lector);
             try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            try {
                 ProtocoloServidor.reto(escritor, lector);
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
-            }
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-            ProtocoloServidor.procesar(escritor,lector);
+
 
             escritor.close();
             lector.close();
             sktCliente.close();
         } catch (IOException e){
             e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
+        }}
 
     // Setter para la clave pública
     public static synchronized void setLlavePublica(PublicKey llave) {

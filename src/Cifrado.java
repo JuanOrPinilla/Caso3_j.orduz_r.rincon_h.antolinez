@@ -23,6 +23,21 @@ public class Cifrado {
         }
     }
 
+    public static byte[] C_kPrivateDirecto( byte[] textoClaro,PrivateKey llave ){
+        byte[] retoCifrado;  
+
+        try{
+            Cipher cifrador = Cipher.getInstance(AES);
+
+            cifrador.init(Cipher.ENCRYPT_MODE, llave);
+            retoCifrado = cifrador.doFinal(textoClaro);
+            return retoCifrado;
+        } catch (Exception e){
+            System.out.println("Exception: " + e.getMessage());
+            return null;
+        }
+    }
+
     public static byte[] C_kPublic(String texto,PublicKey llave ){
         byte[] retoCifrado;  
 

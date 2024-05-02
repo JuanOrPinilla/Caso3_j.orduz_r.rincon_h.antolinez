@@ -1,5 +1,4 @@
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -14,7 +13,7 @@ public class Cliente {
     public static final int PUERTO = 3400;
 	public static final String SERVIDOR = "localhost";
 	
-	public static void main(String[] args) throws IOException, ClassNotFoundException {
+	public static void main(String[] args) throws Exception {
 		
 		Socket socket = null;
 		ObjectOutputStream escritor = null;
@@ -41,8 +40,7 @@ public class Cliente {
 		String reto = String.valueOf(numeroAleatorio);
 
 		ProtocoloCliente.recibirllave(lector);
-		ProtocoloCliente.reto(lector,escritor,reto);
-		ProtocoloCliente.procesar(stdIn,lector,escritor);
+		ProtocoloCliente.verificaReto(lector,escritor,reto);
 		
 		escritor.close();
 		lector.close();

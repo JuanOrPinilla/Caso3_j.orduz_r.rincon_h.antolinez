@@ -3,6 +3,7 @@ import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.io.IOException;
@@ -14,34 +15,34 @@ public class ProtocoloServidor {
     public static PublicKey llavePublica;
     private static PrivateKey llavePrivada;
 
-    public static synchronized void enviarLlavePublica(ObjectOutputStream pOut) throws IOException{
+    public static void enviarLlavePublica(ObjectOutputStream pOut) throws IOException{
         pOut.writeObject(llavePublica);
     }
     
-    public static synchronized void reto(ObjectInputStream pIn, ObjectOutputStream pOut) throws IOException, ClassNotFoundException{
+    public static void reto(ObjectInputStream pIn, ObjectOutputStream pOut) throws Exception{
         String reto;
         reto = (String) pIn.readObject();
         System.out.println("Reto recibido: " + reto);
 
-        byte[] retoCifrado = Cifrado.C_kPrivate(reto, llavePrivada);
+        //Generar el hash del mensaje (H(m))
+        byte[] hash = generarHash(reto);
+        byte[] retoCifrado = Cifrado.C_kPrivateDirecto(hash, llavePrivada);
         
         pOut.writeObject(retoCifrado);
         System.out.println("salida procesada: ");
         imprimir(retoCifrado);
     }
+    
+    private static byte[] generarHash(String mensaje) throws Exception {
+    // Obtener una instancia del algoritmo de hash SHA-256
+    MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
-    public static synchronized void procesar(ObjectInputStream pIn, ObjectOutputStream pOut) throws IOException, ClassNotFoundException  {
-        String inputLine;
-        String outputLine;
-        inputLine = (String) pIn.readObject();
-        System.out.println("Entrada a procesar: " + inputLine);
+    // Calcular el hash del mensaje
+    byte[] hashBytes = digest.digest(mensaje.getBytes());
 
-        outputLine = inputLine;
-
-        pOut.writeObject(outputLine);
-        System.out.println("salida procesada: " + outputLine);
-
+    return hashBytes;
     }
+
 
     public static void setPublicKey(PublicKey llave){
         llavePublica = llave;
