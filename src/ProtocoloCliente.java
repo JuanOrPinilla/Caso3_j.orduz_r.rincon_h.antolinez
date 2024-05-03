@@ -1,25 +1,27 @@
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.math.BigInteger;
-import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+import javax.crypto.Mac;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 public class ProtocoloCliente {
     private static PublicKey llavePublicaServidor;
-    private static SecretKey llaveAsimetricaCifrar;
-    private static SecretKey llaveAsimetricaMac;
+    private static SecretKey K_AB1;
+    private static SecretKey K_AB2;
 
     private static String iv;
 
@@ -118,15 +120,15 @@ public class ProtocoloCliente {
         // Crear una instancia de la clave secreta utilizando SecretKeySpec
         SecretKey hmacKey = new SecretKeySpec(hmacKeyBytes, "HmacSHA256");
 
-        llaveAsimetricaCifrar = encryptionKey;
-        llaveAsimetricaMac = hmacKey;
+        K_AB1 = encryptionKey;
+        K_AB2 = hmacKey;
     }
     public static void iniciarSesion(String login, String password, ObjectInputStream pIn, ObjectOutputStream pOut) throws Exception{
 
         byte[] hashlogin = generarHash(login);
-        byte[] cKAB1log = Cifrado.cifradoSimetrico(llaveAsimetricaCifrar, iv, hashlogin);
+        byte[] cKAB1log = Cifrado.cifradoSimetrico(K_AB1, iv, hashlogin);
         byte[] hashpassword = generarHash(password);
-        byte[] cKAB1pas = Cifrado.cifradoSimetrico(llaveAsimetricaCifrar, iv, hashpassword);
+        byte[] cKAB1pas = Cifrado.cifradoSimetrico(K_AB1, iv, hashpassword);
 
         pOut.writeObject(login);
 
@@ -135,8 +137,64 @@ public class ProtocoloCliente {
         pOut.writeObject(password);
 
         pOut.writeObject(cKAB1pas);
+    }
+
+    public static void consulta(ObjectInputStream pIn, ObjectOutputStream pOut) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException, IOException{
+        // Crear un objeto de la clase Random
+        Random random = new Random();
+        
+        // Generar un número aleatorio entre 1 y 100 (inclusive)
+        int numeroConsulta = random.nextInt(100) + 1;
+        String numeroComoString = String.valueOf(numeroConsulta);
+
+        System.out.println("\nEl usuario escribio: " + numeroComoString);
+        byte[] textoClaro = numeroComoString.getBytes();
+        byte[] numeroConsultaCifrado = Cifrado.cifradoSimetrico(K_AB1, iv, textoClaro);
+
+        pOut.writeObject(numeroConsultaCifrado);
+
+         // Crear una instancia de Mac con el algoritmo HMAC-SHA256
+         Mac mac = Mac.getInstance("HmacSHA256");
+
+          // Inicializar el objeto Mac con la llave compartida
+          mac.init(K_AB2);
+
+          // Calcular el código de autenticación HMAC para el mensaje
+          byte[] hmacBytes = mac.doFinal(numeroComoString.getBytes());
+
+          pOut.writeObject(hmacBytes);
+    }
+    public static void verificacionFinal(ObjectInputStream pIn, ObjectOutputStream pOut) throws ClassNotFoundException, IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException{
+        byte[] consulta = (byte[]) pIn.readObject();
+        byte[] consultaDescifrada = Descifrado.DescifrarPadding(K_AB1,iv,consulta);
+        byte[] consultaDescifrada2 = Descifrado.DescifrarPadding(K_AB1,iv,consultaDescifrada);
+        String texto = new String(consultaDescifrada2, StandardCharsets.UTF_8);
+
+        // Crear una instancia de Mac con el algoritmo HMAC-SHA256
+         Mac mac = Mac.getInstance("HmacSHA256");
+        // Inicializar el objeto Mac con la llave compartida
+        mac.init(K_AB2);
+        // Calcular el HMAC
+        byte[] hmacVerificacion = mac.doFinal(texto.getBytes());
+        // Calcular el HMAC del HMAC
+        byte[] hmacFinalLocal = mac.doFinal(hmacVerificacion);
+        byte[] HMACRecibido = (byte[]) pIn.readObject();
+
+         // Comparar los dos HMAC
+         if (MessageDigest.isEqual(hmacFinalLocal, HMACRecibido)) {
+            System.out.println("\nEl HMAC final coincide con el HMAC inicial. El mensaje es auténtico.");
+            pOut.writeObject(texto);
+        } else {
+            System.out.println("\nEl HMAC final NO coincide con el HMAC inicial. El mensaje podría haber sido alterado.");
+        }
+        Integer respuesta = (Integer) pIn.readObject();
+        System.out.println("\nRespuesta del servidor: " + respuesta);
+
+        System.out.println("\nSe da por finalizada la conexion");
+
 
     }
+    
 
     private static byte[] generarHash(String mensaje) throws Exception {
         // Obtener una instancia del algoritmo de hash SHA-256

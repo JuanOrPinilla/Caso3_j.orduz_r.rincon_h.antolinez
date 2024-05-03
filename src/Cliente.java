@@ -55,6 +55,8 @@ public class Cliente {
         String password = generateRandomString(passwordLength);
 
 		ProtocoloCliente.iniciarSesion(username,password,lector, escritor);
+		ProtocoloCliente.consulta(lector, escritor);
+		ProtocoloCliente.verificacionFinal(lector, escritor);
 		
 		escritor.close();
 		lector.close();

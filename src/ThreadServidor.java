@@ -41,6 +41,8 @@ public class ThreadServidor extends Thread {
             ProtocoloServidor.diffieHelman(escritor, lector);
             System.out.println("\nCONTINUAR (Paso 12)\n");
             ProtocoloServidor.iniciarSesion(escritor, lector);
+            ProtocoloServidor.consulta(escritor, lector);
+            ProtocoloServidor.verificacionFinal(escritor, lector);
 
 
             escritor.close();

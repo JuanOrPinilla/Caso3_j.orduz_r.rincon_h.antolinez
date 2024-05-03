@@ -2,8 +2,11 @@ import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.io.IOException;
@@ -16,6 +19,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.Mac;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -145,6 +152,41 @@ public class ProtocoloServidor {
              System.exit(0); // Terminar el programa
          }
          System.out.println("OK: Verificar (Paso 16 Contraseña)");
+    }
+
+    public static void consulta(ObjectInputStream pIn, ObjectOutputStream pOut) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException, IOException, ClassNotFoundException{
+        byte[] cKAB1Consulta = (byte[]) pIn.readObject();
+
+        byte[] cKAB1ConsultaCKAB1 = Cifrado.cifradoSimetrico(llaveAsimetricaCifrar, iv, cKAB1Consulta);
+
+
+        byte[] cKAB2MAC = (byte[]) pIn.readObject();
+
+        // Crear una instancia de Mac con el algoritmo HMAC-SHA256
+        Mac mac = Mac.getInstance("HmacSHA256");
+
+        // Inicializar el objeto Mac con la llave compartida
+        mac.init(llaveAsimetricaMac);
+
+        // Calcular el código de autenticación HMAC para el mensaje
+        byte[] hmacBytes2 = mac.doFinal(cKAB2MAC);
+
+        pOut.writeObject(cKAB1ConsultaCKAB1);
+        pOut.writeObject(hmacBytes2);
+    }
+
+    public static void verificacionFinal(ObjectInputStream pIn, ObjectOutputStream pOut) throws ClassNotFoundException, IOException{
+        String consulta = (String) pIn.readObject();
+
+        // Convertir el string a un entero
+        int numero = Integer.parseInt(consulta);
+
+        // Restar 1 al número
+        numero--;
+
+        // Imprimir el resultado
+        System.out.println("Respuesta del servidor: " + numero);
+        pOut.writeObject(numero);
     }
     
     private static byte[] generarHash(String mensaje) throws Exception {
