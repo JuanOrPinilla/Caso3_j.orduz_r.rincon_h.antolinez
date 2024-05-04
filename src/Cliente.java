@@ -5,6 +5,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 import java.security.SecureRandom;
+import java.util.Map;
 
 
 
@@ -57,10 +58,15 @@ public class Cliente {
 		ProtocoloCliente.consulta(lector, escritor);
 		ProtocoloCliente.verificacionFinal(lector, escritor);
 		
+		Map<String, Long> times = ProtocoloCliente.getTimes();
 		escritor.close();
 		lector.close();
 		socket.close();
 		stdIn.close();
+
+		for (Map.Entry<String, Long> entry : times.entrySet()) {
+            System.out.println(entry.getKey() + ": " + entry.getValue()+"ms");
+        }
 	}
 
 	// Método para generar una cadena aleatoria de longitud dada

@@ -9,6 +9,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import javax.crypto.Mac;
 
@@ -22,8 +24,8 @@ public class ProtocoloCliente {
     private static PublicKey llavePublicaServidor;
     private static SecretKey K_AB1;
     private static SecretKey K_AB2;
-
     private static String iv;
+    private static Map<String, Long> times = new HashMap();
 
     public static void recibirllave(ObjectInputStream pIn) throws ClassNotFoundException, IOException{
         //obtener llave pública del servidor
@@ -31,6 +33,7 @@ public class ProtocoloCliente {
     }
 
     public static void verificaReto(ObjectInputStream pIn, ObjectOutputStream pOut,String numeroAleatorio) throws Exception {
+        long tiempoInicial = System.currentTimeMillis();
         pOut.writeObject(numeroAleatorio);
         System.out.println("\nEl usuario ha enviado el reto: " + numeroAleatorio);
 
@@ -52,6 +55,9 @@ public class ProtocoloCliente {
             System.out.println("ERROR");
             System.exit(0); // Terminar el programa
         }
+        long tiempoFinal = System.currentTimeMillis();
+        long tiempoEjecucion = tiempoFinal - tiempoInicial;
+        times.put("Verificar firma", tiempoEjecucion);
         System.out.println("\nOK: Verificar (Paso 4)");
     }
 
@@ -73,7 +79,11 @@ public class ProtocoloCliente {
         int x = random.nextInt(20);
 
         //Calcular tiempo Gy------------------------------------------------------------------------------
+        long tiempoInicial = System.currentTimeMillis();
         double gxnum = Math.pow(Integer.parseInt(g),x); 
+        long tiempoFinal = System.currentTimeMillis();
+        long tiempoEjecucion = tiempoFinal - tiempoInicial;
+        times.put("Gy", tiempoEjecucion);
         //-----------------------------------------------------------------------------------------------
         BigInteger gxnumBigInt = BigInteger.valueOf((long) gxnum);
 
@@ -151,8 +161,12 @@ public class ProtocoloCliente {
 
         System.out.println("\nEl usuario escribio: " + numeroComoString);
         //Cifrar consulta----------------------------------------------------------------------------------------------------
+        long tiempoInicial = System.currentTimeMillis();
         byte[] textoClaro = numeroComoString.getBytes();
         byte[] numeroConsultaCifrado = Cifrado.cifradoSimetrico(K_AB1, iv, textoClaro); 
+        long tiempoFinal = System.currentTimeMillis();
+        long tiempoEjecucion = tiempoFinal - tiempoInicial;
+        times.put("Cifrar Consulta", tiempoEjecucion);
         //-------------------------------------------------------------------------------------------------------------------
         pOut.writeObject(numeroConsultaCifrado);
 
@@ -169,6 +183,7 @@ public class ProtocoloCliente {
     }
     public static void verificacionFinal(ObjectInputStream pIn, ObjectOutputStream pOut) throws ClassNotFoundException, IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException{
         //Generar Codigo de autenticación------------------------------------------------------------------------
+        long tiempoInicial = System.currentTimeMillis();
         byte[] consulta = (byte[]) pIn.readObject();
         byte[] consultaDescifrada = Descifrado.DescifrarPadding(K_AB1,iv,consulta);
         byte[] consultaDescifrada2 = Descifrado.DescifrarPadding(K_AB1,iv,consultaDescifrada);
@@ -182,9 +197,13 @@ public class ProtocoloCliente {
         byte[] hmacVerificacion = mac.doFinal(texto.getBytes());
         // Calcular el HMAC del HMAC
         byte[] hmacFinalLocal = mac.doFinal(hmacVerificacion);
+        long tiempoFinal = System.currentTimeMillis();
+        long tiempoEjecucion = tiempoFinal - tiempoInicial;
+        times.put("Generar codigo de autenticacion", tiempoEjecucion);
         //--------------------------------------------------------------------------------------------------------
        
         //Verificar Codigo de autenticación------------------------------------------------------------------------
+        long tiempoInicial2 = System.currentTimeMillis();
         byte[] HMACRecibido = (byte[]) pIn.readObject();
 
          // Comparar los dos HMAC
@@ -195,6 +214,9 @@ public class ProtocoloCliente {
             System.out.println("\nEl HMAC final NO coincide con el HMAC inicial. El mensaje podría haber sido alterado.");
         }
         Integer respuesta = (Integer) pIn.readObject();
+        long tiempoFinal2 = System.currentTimeMillis();
+        long tiempoEjecucion2 = tiempoFinal2 - tiempoInicial2;
+        times.put("Verificar codigo de autenticacion", tiempoEjecucion2);
         //-----------------------------------------------------------------------------------------------------------
         System.out.println("\nRespuesta del servidor: " + respuesta);
         System.out.println("\nSe da por finalizada la conexion");
@@ -217,6 +239,10 @@ public class ProtocoloCliente {
             System.out.print(contenido[i] + " ");
         }
         System.out.println(contenido[i] + " ");
+    }
+
+    public static Map<String, Long> getTimes(){
+        return times;
     }
 
 }

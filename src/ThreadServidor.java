@@ -3,12 +3,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.security.PublicKey;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ThreadServidor extends Thread {
 
     private Socket sktCliente = null;
     private Integer id;
     public static PublicKey llavePublica;
+    private static Map<String, Long> times = new HashMap();
 
     public ThreadServidor(Socket pSocket, Integer id){
         this.sktCliente = pSocket;
@@ -25,7 +28,11 @@ public class ThreadServidor extends Thread {
             
             ProtocoloServidor.enviarLlavePublica(lector);
             try {
+                long tiempoInicial = System.currentTimeMillis();
                 ProtocoloServidor.reto(escritor, lector);
+                long tiempoFinal = System.currentTimeMillis();
+                long tiempoEjecucion = tiempoFinal - tiempoInicial;
+                times.put("Generar firma", tiempoEjecucion);  
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -34,7 +41,11 @@ public class ThreadServidor extends Thread {
             ProtocoloServidor.diffieHelman(escritor, lector);
             System.out.println("\nCONTINUAR (Paso 12)\n");
             ProtocoloServidor.iniciarSesion(escritor, lector);
+            long tiempoInicial = System.currentTimeMillis();
             ProtocoloServidor.consulta(escritor, lector);
+            long tiempoFinal = System.currentTimeMillis();
+            long tiempoEjecucion = tiempoFinal - tiempoInicial;
+            times.put("Desicfrar la consulta", tiempoEjecucion);  
             ProtocoloServidor.verificacionFinal(escritor, lector);
 
 
@@ -44,9 +55,13 @@ public class ThreadServidor extends Thread {
         } catch (IOException | ClassNotFoundException e){
             e.printStackTrace();
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
-        }}
+        }
+
+        for (Map.Entry<String, Long> entry : times.entrySet()) {
+            System.out.println(entry.getKey() + ": " + entry.getValue()+"ms");
+        }
+    }
 
     // Setter para la clave pública
     public static synchronized void setLlavePublica(PublicKey llave) {

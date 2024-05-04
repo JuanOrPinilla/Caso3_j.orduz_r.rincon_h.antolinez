@@ -11,6 +11,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import javax.crypto.BadPaddingException;
@@ -42,7 +44,7 @@ public class ProtocoloServidor {
         byte[] hash = generarHash(reto);
         byte[] retoCifrado = Cifrado.C_kPrivateDirecto(hash, llavePrivada);
         
-        pOut.writeObject(retoCifrado);  
+        pOut.writeObject(retoCifrado);
         //-----------------------------------------------------------------
     }
 
