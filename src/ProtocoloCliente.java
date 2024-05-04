@@ -72,7 +72,9 @@ public class ProtocoloCliente {
         // Generar un número aleatorio entre 0 y 20 (individuo)
         int x = random.nextInt(20);
 
-        double gxnum = Math.pow(Integer.parseInt(g),x);
+        //Calcular tiempo Gy------------------------------------------------------------------------------
+        double gxnum = Math.pow(Integer.parseInt(g),x); 
+        //-----------------------------------------------------------------------------------------------
         BigInteger gxnumBigInt = BigInteger.valueOf((long) gxnum);
 
         BigInteger yCliente = gxnumBigInt.mod(PdecimalValue);
@@ -148,9 +150,10 @@ public class ProtocoloCliente {
         String numeroComoString = String.valueOf(numeroConsulta);
 
         System.out.println("\nEl usuario escribio: " + numeroComoString);
+        //Cifrar consulta----------------------------------------------------------------------------------------------------
         byte[] textoClaro = numeroComoString.getBytes();
-        byte[] numeroConsultaCifrado = Cifrado.cifradoSimetrico(K_AB1, iv, textoClaro);
-
+        byte[] numeroConsultaCifrado = Cifrado.cifradoSimetrico(K_AB1, iv, textoClaro); 
+        //-------------------------------------------------------------------------------------------------------------------
         pOut.writeObject(numeroConsultaCifrado);
 
          // Crear una instancia de Mac con el algoritmo HMAC-SHA256
@@ -165,6 +168,7 @@ public class ProtocoloCliente {
           pOut.writeObject(hmacBytes);
     }
     public static void verificacionFinal(ObjectInputStream pIn, ObjectOutputStream pOut) throws ClassNotFoundException, IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException{
+        //Generar Codigo de autenticación------------------------------------------------------------------------
         byte[] consulta = (byte[]) pIn.readObject();
         byte[] consultaDescifrada = Descifrado.DescifrarPadding(K_AB1,iv,consulta);
         byte[] consultaDescifrada2 = Descifrado.DescifrarPadding(K_AB1,iv,consultaDescifrada);
@@ -178,6 +182,9 @@ public class ProtocoloCliente {
         byte[] hmacVerificacion = mac.doFinal(texto.getBytes());
         // Calcular el HMAC del HMAC
         byte[] hmacFinalLocal = mac.doFinal(hmacVerificacion);
+        //--------------------------------------------------------------------------------------------------------
+       
+        //Verificar Codigo de autenticación------------------------------------------------------------------------
         byte[] HMACRecibido = (byte[]) pIn.readObject();
 
          // Comparar los dos HMAC
@@ -188,11 +195,9 @@ public class ProtocoloCliente {
             System.out.println("\nEl HMAC final NO coincide con el HMAC inicial. El mensaje podría haber sido alterado.");
         }
         Integer respuesta = (Integer) pIn.readObject();
+        //-----------------------------------------------------------------------------------------------------------
         System.out.println("\nRespuesta del servidor: " + respuesta);
-
         System.out.println("\nSe da por finalizada la conexion");
-
-
     }
     
 

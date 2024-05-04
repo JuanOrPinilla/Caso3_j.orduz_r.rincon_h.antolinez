@@ -33,6 +33,7 @@ public class ProtocoloServidor {
     }
     
     public static void reto(ObjectInputStream pIn, ObjectOutputStream pOut) throws Exception{
+        //Generar firma--------------------------------------------------
         String reto;
         reto = (String) pIn.readObject();
         System.out.println("Reto recibido: " + reto);
@@ -41,9 +42,8 @@ public class ProtocoloServidor {
         byte[] hash = generarHash(reto);
         byte[] retoCifrado = Cifrado.C_kPrivateDirecto(hash, llavePrivada);
         
-        pOut.writeObject(retoCifrado);
-        //System.out.println("salida procesada: ");
-        //imprimir(retoCifrado);
+        pOut.writeObject(retoCifrado);  
+        //-----------------------------------------------------------------
     }
 
     public static void diffieHelman(ObjectInputStream pIn, ObjectOutputStream pOut) throws Exception{
@@ -149,11 +149,9 @@ public class ProtocoloServidor {
     }
 
     public static void consulta(ObjectInputStream pIn, ObjectOutputStream pOut) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException, IOException, ClassNotFoundException{
+        //Desicfrar la consulta-----------------------------------------------------------------------------
         byte[] cKAB1Consulta = (byte[]) pIn.readObject();
-
         byte[] cKAB1ConsultaCKAB1 = Cifrado.cifradoSimetrico(llaveAsimetricaCifrar, iv, cKAB1Consulta);
-
-
         byte[] cKAB2MAC = (byte[]) pIn.readObject();
 
         // Crear una instancia de Mac con el algoritmo HMAC-SHA256
@@ -167,6 +165,7 @@ public class ProtocoloServidor {
 
         pOut.writeObject(cKAB1ConsultaCKAB1);
         pOut.writeObject(hmacBytes2);
+        //--------------------------------------------------------------------------------------------------
     }
 
     public static void verificacionFinal(ObjectInputStream pIn, ObjectOutputStream pOut) throws ClassNotFoundException, IOException{
