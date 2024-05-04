@@ -58,9 +58,13 @@ public class ThreadServidor extends Thread {
             e.printStackTrace();
         }
 
+        System.out.println("----------------------------------------------------------------");
         for (Map.Entry<String, Long> entry : times.entrySet()) {
             System.out.println(entry.getKey() + ": " + entry.getValue()+"ms");
         }
+        System.out.println("----------------------------------------------------------------");
+        System.out.println("----------------------------------------------------------------");
+        System.out.println("----------------------------------------------------------------");
     }
 
     // Setter para la clave pública

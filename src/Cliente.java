@@ -64,9 +64,13 @@ public class Cliente {
 		socket.close();
 		stdIn.close();
 
-		for (Map.Entry<String, Long> entry : times.entrySet()) {
+		System.out.println("----------------------------------------------------------------");
+        for (Map.Entry<String, Long> entry : times.entrySet()) {
             System.out.println(entry.getKey() + ": " + entry.getValue()+"ms");
         }
+        System.out.println("----------------------------------------------------------------");
+        System.out.println("----------------------------------------------------------------");
+        System.out.println("----------------------------------------------------------------");
 	}
 
 	// Método para generar una cadena aleatoria de longitud dada
