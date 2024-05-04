@@ -11,6 +11,7 @@ public class ThreadServidor extends Thread {
     private Socket sktCliente = null;
     private Integer id;
     public static PublicKey llavePublica;
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private static Map<String, Long> times = new HashMap();
 
     public ThreadServidor(Socket pSocket, Integer id){

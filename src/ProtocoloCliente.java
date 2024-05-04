@@ -25,6 +25,7 @@ public class ProtocoloCliente {
     private static SecretKey K_AB1;
     private static SecretKey K_AB2;
     private static String iv;
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private static Map<String, Long> times = new HashMap();
 
     public static void recibirllave(ObjectInputStream pIn) throws ClassNotFoundException, IOException{
