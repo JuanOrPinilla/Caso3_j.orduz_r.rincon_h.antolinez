@@ -2,7 +2,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 
 public class ThreadServidor extends Thread {
@@ -10,7 +9,6 @@ public class ThreadServidor extends Thread {
     private Socket sktCliente = null;
     private Integer id;
     public static PublicKey llavePublica;
-    private static PrivateKey llavePrivada;
 
     public ThreadServidor(Socket pSocket, Integer id){
         this.sktCliente = pSocket;
@@ -54,12 +52,4 @@ public class ThreadServidor extends Thread {
     public static synchronized void setLlavePublica(PublicKey llave) {
         llavePublica = llave;
     }
-
-    // Setter para la clave privada
-    public static synchronized void setLlavePrivada(PrivateKey llave) {
-        llavePrivada = llave;
-    }
-
-
-    
 }

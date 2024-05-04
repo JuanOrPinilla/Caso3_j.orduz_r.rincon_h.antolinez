@@ -26,8 +26,6 @@ public class Servidor {
 
         ProtocoloServidor.setPublicKey(llavePublica);
         ProtocoloServidor.setPrivateKey(llavePrivada);
-
-        ThreadServidor.setLlavePrivada(llavePrivada);
         ThreadServidor.setLlavePublica(llavePublica);
         //Inicializacón del servidor
         ServerSocket ss = null;
